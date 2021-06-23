@@ -34,7 +34,7 @@ elif os.name == "posix":
         real_resolution = (int(reslist[0]),int(reslist[1]))
     except Exception as err:
         print(f"Unexcepted error catched {err} on real_resolution. ")
-        real_resolution = (1920,1090)
+        real_resolution = (1920,1080)
 else:
     os.exit("Unsupported os!",os.name)
         
