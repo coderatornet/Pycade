@@ -710,8 +710,8 @@ while True:
 
 # SCROLL & PARALLAX #
 
-    true_scroll[0] += (player_rect.x-true_scroll[0]-144)/20
-    true_scroll[1] += (player_rect.y-true_scroll[1]-89)/20
+    true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/4) - (player_rect.width / 2)))/20
+    true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/4) - (player_rect.height / 2)))/20
 
     scroll = true_scroll.copy()
     scroll[1] = int(scroll[1])
