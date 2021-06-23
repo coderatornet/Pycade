@@ -1,0 +1,2 @@
+player/idle/ 7;7;40 loop
+player/run/ 7;7 loop
