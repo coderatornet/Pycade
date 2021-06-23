@@ -36,8 +36,10 @@ elif os.name == "posix":
         print(f"Unexcepted error catched {err} on real_resolution. ")
         real_resolution = (1920,1080)
 else:
-    os.exit("Unsupported os!",os.name)
-        
+    sys.exit("Unsupported os!",os.name)
+
+print("Resolution:",real_resolution)
+
 FPS = 90
 window_width = 600
 window_height = 400
