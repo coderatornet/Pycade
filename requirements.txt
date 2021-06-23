@@ -1,0 +1,11 @@
+click==8.0.1
+colorama==0.4.4
+Flask==2.0.1
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
+noise @ file:///C:/Users/user/Desktop/noise-1.2.3-cp39-cp39-win_amd64.whl
+pygame==2.0.1
+PyYAML==5.4.1
+turtle==0.0.1
+Werkzeug==2.0.1
