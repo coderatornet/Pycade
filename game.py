@@ -18,9 +18,8 @@ stone_walk_sounds[0].set_volume(0.2)
 stone_walk_sounds[1].set_volume(0.2)
 fall_off_sound.set_volume(0.3)
 pygame.mixer.music.load('data/audios/music.wav')
-pygame.mixer.music.set_volume(0.7)
-
-#pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0)
+pygame.mixer.music.play(-1)
 
 ####################
 
@@ -101,6 +100,14 @@ background_image = pygame.image.load("data/images/background/merged_image.jpg")
 #####################
 
 # FUNCTIONS #
+
+def circle_surf(radius, color):
+
+    surf = pygame.Surface((radius * 2, radius * 2))
+    pygame.draw.circle(surf, color, (radius, radius), radius)
+    surf.set_colorkey((0,0,0))
+
+    return surf
 
 def change_action(action_var,frame,new_value):
     if action_var != new_value:
@@ -634,6 +641,7 @@ dragging = False
 particle_bool = False
 mouse_on_blocks = False
 fullscreen = False
+particle_light = False
 
 camera_share = 20
 fullscreen_share = 4
@@ -835,8 +843,6 @@ while True:
     particles.append([[mouse_pos[0] / mouse_share,mouse_pos[1] / mouse_share],[random.randint(0,20) / 10 - 1, -2], random.randint(4,6)])
     particle_tiles = []
     particle_momentum = []
-    
-    print(mouse_pos)
 
     if mouse_on_blocks:
         particles = []
@@ -857,6 +863,10 @@ while True:
             particle[1][1] += 0.3
 
             particle_tiles.append(pygame.Rect(particle[0][0],particle[0][1],particle[2],particle[2]))
+
+            if particle_light:
+                radius = particle[2] * 2
+                display.blit(circle_surf((radius + 5), (20,20,20)), (int(particle[0][0] - (radius + 5)), int(particle[0][1] - (radius + 5))), special_flags=BLEND_RGB_ADD)
 
             if particle[2] <= 0:
                 particles.remove(particle)
@@ -1019,9 +1029,26 @@ while True:
                     if mouse_on_blocks == False:
                         particle_bool = True
 
+            if event.key == K_m:
+                if pygame.mixer.music.get_volume() < 0.6:
+                    pygame.mixer.music.set_volume(0.7)
+                    break
+
+                if pygame.mixer.music.get_volume() > 0:
+                    pygame.mixer.music.set_volume(0)
+                    break
+
             if event.key == K_x:
 
                 save_edited_map()
+
+            if event.key == K_l:
+
+                if particle_light:
+                    particle_light = False
+
+                else:
+                    particle_light = True
 
             if event.key == K_F5:
                 print("Restart")
@@ -1098,7 +1125,7 @@ while True:
         if event.type == MOUSEBUTTONUP:
 
             if event.button == 1:
-                print("RELEASED")
+                #print("RELEASED")
                 mouse_on_inventory()
 
                 change_items_slot(mouse_on_slot[0],mouse_on_slot[1])
