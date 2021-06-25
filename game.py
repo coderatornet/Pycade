@@ -288,7 +288,7 @@ def left_click():
             tile_coor_y1 = tile_rects[i][1] - scroll[1]
             tile_coor_y2 = tile_rects[i][1] - scroll[1] + TILE_SIZE
 
-            if mouse_pos[0]/2 > tile_coor_x1 and mouse_pos[0]/2 < tile_coor_x2 and mouse_pos[1]/2 > tile_coor_y1 and mouse_pos[1]/2 < tile_coor_y2:
+            if mouse_pos[0] / mouse_share > tile_coor_x1 and mouse_pos[0] / mouse_share < tile_coor_x2 and mouse_pos[1] / mouse_share > tile_coor_y1 and mouse_pos[1] / mouse_share < tile_coor_y2:
                 remove_block(i)
 
     if inventory_is_open:
@@ -407,7 +407,7 @@ def right_click(block_id):
             tile_middle_coor = [tile_coor_x1 + 16, tile_coor_y1 + 16]
 
 
-            if mouse_pos[0]/2 > tile_coor_x1 and mouse_pos[0]/2 < tile_coor_x2 and mouse_pos[1]/2 > tile_coor_y1 and mouse_pos[1]/2 < tile_coor_y2:
+            if mouse_pos[0] / mouse_share > tile_coor_x1 and mouse_pos[0] / mouse_share < tile_coor_x2 and mouse_pos[1] / mouse_share > tile_coor_y1 and mouse_pos[1] / mouse_share < tile_coor_y2:
                 
                 if block_id in blocks:
                     add_block(i,block_id)
@@ -609,7 +609,7 @@ def control_mouse_on_blocks():
 
             global mouse_on_blocks
 
-            if mouse_pos[0]/2 > tile_coor_x1 and mouse_pos[0]/2 < tile_coor_x2 and mouse_pos[1]/2 > tile_coor_y1 and mouse_pos[1]/2 < tile_coor_y2:
+            if mouse_pos[0] / mouse_share > tile_coor_x1 and mouse_pos[0] / mouse_share < tile_coor_x2 and mouse_pos[1] / mouse_share > tile_coor_y1 and mouse_pos[1] / mouse_share < tile_coor_y2:
                 
                 mouse_on_blocks = True
                 break
@@ -638,6 +638,7 @@ fullscreen = False
 camera_share = 20
 fullscreen_share = 4
 screen_share = 2
+mouse_share = screen_share
 fullscreen_difference = fullscreen_share / screen_share
 playerYMomentum = 0 # Player Vertical Momentum
 airTimer = 0
@@ -831,10 +832,12 @@ while True:
     control_mouse_on_blocks()
 
     #print(mouse_on_blocks)
-    particles.append([[mouse_pos[0] / 2,mouse_pos[1] / 2],[random.randint(0,20) / 10 - 1, -2], random.randint(4,6)])
+    particles.append([[mouse_pos[0] / mouse_share,mouse_pos[1] / mouse_share],[random.randint(0,20) / 10 - 1, -2], random.randint(4,6)])
     particle_tiles = []
     particle_momentum = []
     
+    print(mouse_pos)
+
     if mouse_on_blocks:
         particles = []
 
@@ -1027,10 +1030,14 @@ while True:
             if event.key == K_F11:
 
                 if fullscreen:
+                    ###WINDOWED###
                     fullscreen = False
+                    mouse_share = screen_share
 
                 elif fullscreen == False:
+                    ###FULLSCREEN###
                     fullscreen = True
+                    mouse_share = fullscreen_share
 
                     #print("SCROLL SHARE MULTIPILIER: ",(int(real_resolution[0]/window_width) + int(real_resolution[1]/window_height)))
 
