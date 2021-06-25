@@ -1,5 +1,6 @@
 import pygame, sys, os, random, ctypes
 from pygame.locals import *
+from PIL import Image, ImageDraw
 
 pygame.init()
 pygame.font.init()
@@ -8,6 +9,7 @@ pygame.mixer.pre_init(44100, -16, 2, 512)
 # LOADING STUFFS #
 
 stone = pygame.image.load('data/images/blocks/stone.png')
+bg_stone_dark = pygame.image.load('data/images/background/stone_dark.png')
 
 fall_off_sound = pygame.mixer.Sound('data/audios/fall_off.wav')
 jump_sound = pygame.mixer.Sound('data/audios/jump.wav')
@@ -34,12 +36,10 @@ elif os.name == "posix":
         real_resolution = (int(reslist[0]),int(reslist[1]))
     except Exception as err:
         print(f"Unexcepted error catched {err} on real_resolution. ")
-        real_resolution = (1920,1080)
+        real_resolution = (1920,1090)
 else:
-    sys.exit("Unsupported os!",os.name)
-
-print("Resolution:",real_resolution)
-
+    os.exit("Unsupported os!",os.name)
+        
 FPS = 90
 window_width = 600
 window_height = 400
@@ -54,6 +54,42 @@ global animationFrames
 animationFrames = {}
 
 stone_walk_sound_timer = 0
+scroll_share = 6
+
+background_image = Image.open("data/images/background/stone_dark.png")
+draw = ImageDraw.Draw(background_image)
+
+mode = background_image.mode
+size = background_image.size
+data = background_image.tobytes()
+
+this_image = pygame.image.fromstring(data, size, mode)
+this_image = pygame.transform.scale(this_image,(this_image.get_width()*2,this_image.get_height()*2))
+
+block_amount_of_screen_x = (int((WINDOW_SIZE[0]) / bg_stone_dark.get_width())) + scroll_share
+block_amount_of_screen_y = (int((WINDOW_SIZE[1]) / bg_stone_dark.get_height())) + scroll_share
+
+ #print(block_amount_of_screen_x,block_amount_of_screen_y)
+
+image1 = Image.open("data/images/background/stone_dark.png")
+
+image1_size = (bg_stone_dark.get_width(),bg_stone_dark.get_height())
+
+new_image = Image.new('RGB',(image1_size[0] * block_amount_of_screen_x, image1_size[0] * block_amount_of_screen_y), (250,250,250))
+
+b = 0
+for y in range(block_amount_of_screen_y):
+    a = 0
+    for x in range(block_amount_of_screen_x):
+
+        new_image.paste(image1,(a,b))
+        new_image.save("data/images/background/merged_image.jpg","JPEG")
+        a += 16
+
+    b += 16
+
+
+background_image = pygame.image.load("data/images/background/merged_image.jpg")
 
 #####################
 
@@ -592,6 +628,10 @@ particle_bool = False
 mouse_on_blocks = False
 fullscreen = False
 
+camera_share = 20
+fullscreen_share = 4
+screen_share = 2
+fullscreen_difference = fullscreen_share / screen_share
 playerYMomentum = 0 # Player Vertical Momentum
 airTimer = 0
 global_slot_index = 2
@@ -657,7 +697,7 @@ blocks = ['1']
 #print(slot_coors[0])
 
 
-myfont = pygame.font.SysFont('Arial', 30)
+myfont = pygame.font.SysFont('Arial', 15)
 
 ######################
 
@@ -667,8 +707,10 @@ while True:
         #print("FS")
         WINDOW_SIZE = (real_resolution)
         window = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN, vsync = 0)
-        display = pygame.Surface((real_resolution[0]/2,real_resolution[1]/2))
-        
+        display = pygame.Surface((real_resolution[0]/fullscreen_share,real_resolution[1]/fullscreen_share))
+        true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/(fullscreen_share ** 2)) - (player_rect.width / 2))) / (camera_share / fullscreen_difference)
+        true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/(fullscreen_share ** 2)) - (player_rect.height / 2))) / (camera_share / fullscreen_difference)
+
         #mini_map = pygame.transform.scale(display, (150,100))
 
         #frame_difference = (map_frame.get_width() - mini_map.get_width()) / 2
@@ -679,6 +721,8 @@ while True:
 
        
     elif fullscreen == False:
+        true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/4) - (player_rect.width / 2)))/20
+        true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/4) - (player_rect.height / 2)))/20
         #print("NOT FS")
         window_width = 600
         window_height = 400
@@ -699,7 +743,8 @@ while True:
     clock.tick(FPS)
     
     current_FPS = int(clock.get_fps())
-    textsurface = myfont.render(str(current_FPS),False,(255,255,255))
+    current_FPS = "FPS: " + str(current_FPS)
+    textsurface = myfont.render(current_FPS,False,(255,255,255))
 
     display.fill((46,124,180))
 
@@ -712,20 +757,32 @@ while True:
 
 # SCROLL & PARALLAX #
 
-    true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/4) - (player_rect.width / 2)))/20
-    true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/4) - (player_rect.height / 2)))/20
+    true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/(screen_share ** 2)) - (player_rect.width / 2))) / camera_share
+    true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/(screen_share ** 2)) - (player_rect.height / 2))) / camera_share
 
     scroll = true_scroll.copy()
     scroll[1] = int(scroll[1])
     scroll[0] = int(scroll[0])
 
-    pygame.draw.rect(display,(7,80,75),pygame.Rect(0,150,600,200))
-    for bg_object in background_object:
-        obj_rect = pygame.Rect(bg_object[1][0]-scroll[0]*bg_object[0], bg_object[1][1]-scroll[1]*bg_object[0],bg_object[1][2],bg_object[1][3])
-        if bg_object[0] == 0.5:
-            pygame.draw.rect(display, (14,222,150),obj_rect)
-        else:
-            pygame.draw.rect(display, (9,100,95),obj_rect)
+    display.blit(background_image,((-(scroll_share/2) * 16) - scroll[0] * 0.25, (-(scroll_share/2) * 16) - scroll[1] * 0.25))
+
+    """a = -100
+                for y in range(int((WINDOW_SIZE[1]) / bg_stone_dark.get_height())):
+                    b = -100
+                    for x in range(int((WINDOW_SIZE[0]) / bg_stone_dark.get_width())):
+            
+                        display.blit(bg_stone_dark,(b - scroll[0] * 0.25, a - scroll[1] * 0.25))
+                        b += 16
+            
+                    a += 16"""
+    
+
+    """for bg_object in background_object:
+                    obj_rect = pygame.Rect(bg_object[1][0]-scroll[0]*bg_object[0], bg_object[1][1]-scroll[1]*bg_object[0],bg_object[1][2],bg_object[1][3])
+                    if bg_object[0] == 0.5:
+                        pygame.draw.rect(display, (14,222,150),obj_rect)
+                    else:
+                        pygame.draw.rect(display, (9,100,95),obj_rect)"""
 
 ####################
 
@@ -968,6 +1025,9 @@ while True:
                 elif fullscreen == False:
                     fullscreen = True
 
+                    #print("SCROLL SHARE MULTIPILIER: ",(int(real_resolution[0]/window_width) + int(real_resolution[1]/window_height)))
+
+
             if event.key == K_e:
                 if inventory_is_open == False:
                     inventory_is_open = True
@@ -1051,14 +1111,13 @@ while True:
     #mini_map = pygame.transform.scale(display, (150,100)) # 150 100 first
     #current_image = empty_bar
     #map_frame = pygame.transform.scale(map_frame, (170,120))
-
     window.blit(surface,(0,0))
     #window.blit(mini_map,(WINDOW_SIZE[0]-mini_map.get_width()- frame_difference, frame_difference))
     #window.blit(map_frame,(WINDOW_SIZE[0]-map_frame.get_width(),0))
     #draw_item_bar(x_pos_of_item_bar,y_pos_of_item_bar)
     #put_item_on_item_bar(x_pos_of_item_bar,y_pos_of_item_bar)
     window.blit(textsurface,(0,0))
-
+    #window.blit(this_image,(250,250))
     """if inventory_is_open:
                     open_inventory(x_pos_of_inventory-100,y_pos_of_inventory)
                     put_item_on_inventory(slot_coors[0][0][0],slot_coors[0][0][1])
