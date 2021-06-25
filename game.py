@@ -77,16 +77,23 @@ image1_size = (bg_stone_dark.get_width(),bg_stone_dark.get_height())
 
 new_image = Image.new('RGB',(image1_size[0] * block_amount_of_screen_x, image1_size[0] * block_amount_of_screen_y), (250,250,250))
 
-b = 0
-for y in range(block_amount_of_screen_y):
-    a = 0
-    for x in range(block_amount_of_screen_x):
+try:
+    b = 0
+    for y in range(block_amount_of_screen_y):
+        a = 0
+        for x in range(block_amount_of_screen_x):
 
-        new_image.paste(image1,(a,b))
-        new_image.save("data/images/background/merged_image.jpg","JPEG")
-        a += 16
+            new_image.paste(image1,(a,b))
+            new_image.save("data/images/background/merged_image.jpg","JPEG")
+            a += 16
 
-    b += 16
+        b += 16
+
+except PermissionError as error:
+    #print("PERMISSION ERROR OCCURRED")
+    python = sys.executable
+    os.execl(python, python, * sys.argv)
+
 
 
 background_image = pygame.image.load("data/images/background/merged_image.jpg")
