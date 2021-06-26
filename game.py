@@ -1,4 +1,5 @@
 import pygame, sys, os, random, ctypes
+import data.engine as e
 from pygame.locals import *
 from PIL import Image, ImageDraw
 
@@ -49,8 +50,8 @@ display = pygame.Surface((window_width/2,window_height/2))
 pygame.display.set_caption('GameDev')
 background_object = [[0.25,[120,10,70,400]],[0.25,[280,30,40,400]],[0.5,[-20,40,40,400]],[0.5,[70,90,100,400]],[0.5,[250,80,120,400]],[0.5,[400,50,140,400]]]
 
-global animationFrames
-animationFrames = {}
+e.load_animations('data/images/entities/')
+e.load_animations('data/images/objects/')
 
 stone_walk_sound_timer = 0
 scroll_share = 6
@@ -109,28 +110,6 @@ def circle_surf(radius, color):
 
     return surf
 
-def change_action(action_var,frame,new_value):
-    if action_var != new_value:
-        action_var = new_value
-        frame = 0
-    return action_var,frame
-
-def load_animation(path, frameDurations):
-    global animationFrames
-    animation_name = path.split('/')[-1]
-    animation_frame_data = []
-    n = 0
-    for frame in frameDurations:
-        animation_frame_id = animation_name + '_' + str(n)
-        img_loc = path + '/' + animation_frame_id + '.png'
-        animation_image = pygame.image.load(img_loc)
-        animation_image.set_colorkey((255,255,255))
-        animationFrames[animation_frame_id] = animation_image.copy()
-        for i in range(frame):
-            animation_frame_data.append(animation_frame_id)
-        n += 1
-    return animation_frame_data, animation_image
-
 def load_item_bar():
 
     image_name = "selected_"
@@ -176,15 +155,6 @@ def save_edited_map():
         #print()
         saved_map.write('\n')
 
-def collision_test(rect, tiles):
-    hit_list = []
-
-    for tile in tiles:
-        if rect.colliderect(tile):
-            hit_list.append(tile)
-
-    return hit_list
-
 def move_particle(rects, tiles):
     collision_types_of_particles = {'top': False, 'bottom': False, 'right': False, 'left': False}
 
@@ -214,32 +184,6 @@ def move_particle(rects, tiles):
                     collision_types_of_particles['top'] = True
 
     return rects, collision_types_of_particles
-
-def move(rect, movement, tiles):
-    collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
-
-    rect.x += movement[0]
-    hit_list = collision_test(rect, tiles)
-    for tile in hit_list:
-        if movement[0] > 0:
-            rect.right = tile.left
-            collision_types['right'] = True
-        elif movement[0] < 0:
-            rect.left = tile.right
-            collision_types['left'] = True
-
-    rect.y += movement[1]
-    hit_list = collision_test(rect, tiles)
-    for tile in hit_list:
-        if movement[1] > 0:
-            rect.bottom = tile.top
-            collision_types['bottom'] = True
-        elif movement[1] < 0:
-            rect.top = tile.bottom
-            collision_types['top'] = True
-
-    return rect, collision_types
-
 
 def restart_game():
     python = sys.executable
@@ -296,7 +240,9 @@ def left_click():
             tile_coor_y2 = tile_rects[i][1] - scroll[1] + TILE_SIZE
 
             if mouse_pos[0] / mouse_share > tile_coor_x1 and mouse_pos[0] / mouse_share < tile_coor_x2 and mouse_pos[1] / mouse_share > tile_coor_y1 and mouse_pos[1] / mouse_share < tile_coor_y2:
-                remove_block(i)
+                
+                if [tile_rects[i][0],tile_rects[i][1]] not in torch_coors:
+                    remove_block(i)
 
     if inventory_is_open:
 
@@ -417,7 +363,9 @@ def right_click(block_id):
             if mouse_pos[0] / mouse_share > tile_coor_x1 and mouse_pos[0] / mouse_share < tile_coor_x2 and mouse_pos[1] / mouse_share > tile_coor_y1 and mouse_pos[1] / mouse_share < tile_coor_y2:
                 
                 if block_id in blocks:
-                    add_block(i,block_id)
+
+                    if [tile_rects[i][0],tile_rects[i][1]] not in torch_coors:
+                        add_block(i,block_id)
 
     else:
         #print(slot_list)
@@ -659,23 +607,16 @@ selected_item = [50,50]
 
 true_scroll = [0,0]
 
-animation_database = {}
-animation_database['run'],animation_image = load_animation('data/images/entities/player/run',[7,7,7,7,7,7,7])
-animation_database['idle'],animation_image = load_animation('data/images/entities/player/idle',[7,7,7,7,7])
-
-player_action = 'idle'
-player_frame = 0
-player_flip = 0
-
 ######################
 
 # SECOND DEFINITIONS #
 
-player_rect = pygame.Rect(50,50,animation_image.get_width(),animation_image.get_height())
+player = e.entity(100,100,17,22,'player','idle')
+
 game_map = load_map('data/levels/level_0')
 game_map.pop()
-player_rect.x = 90
-player_rect.y = 50
+object_map = load_map('data/levels/object_map')
+object_map.pop()
 mouse_pos = [0,0]
 slot_list = [[],[],[],[],[],[]]
 slot_list_with_item_id = [[],[],[],[],[],[]]
@@ -715,6 +656,22 @@ blocks = ['1']
 
 myfont = pygame.font.SysFont('Arial', 15)
 
+torch_list = []
+torch_coors = []
+y =  0
+for row in object_map:
+    x = 0
+    for tile in row:
+
+        if tile == '3':
+            torch = e.entity(x * TILE_SIZE, y * TILE_SIZE,16,16,'walltorch1','open')
+            if torch not in torch_list:
+                torch_list.append(torch)
+                torch_coors.append([x * TILE_SIZE, y * TILE_SIZE])
+
+        x += 1
+    y += 1
+
 ######################
 
 while True:
@@ -724,8 +681,8 @@ while True:
         WINDOW_SIZE = (real_resolution)
         window = pygame.display.set_mode(WINDOW_SIZE, pygame.FULLSCREEN, vsync = 0)
         display = pygame.Surface((real_resolution[0]/fullscreen_share,real_resolution[1]/fullscreen_share))
-        true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/(fullscreen_share ** 2)) - (player_rect.width / 2))) / (camera_share / fullscreen_difference)
-        true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/(fullscreen_share ** 2)) - (player_rect.height / 2))) / (camera_share / fullscreen_difference)
+        true_scroll[0] += (player.x-true_scroll[0]-((WINDOW_SIZE[0]/(fullscreen_share ** 2)) - (player.size_x / 2))) / (camera_share / fullscreen_difference)
+        true_scroll[1] += (player.y-true_scroll[1]-((WINDOW_SIZE[1]/(fullscreen_share ** 2)) - (player.size_y / 2))) / (camera_share / fullscreen_difference)
 
         #mini_map = pygame.transform.scale(display, (150,100))
 
@@ -737,8 +694,8 @@ while True:
 
        
     elif fullscreen == False:
-        true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/4) - (player_rect.width / 2)))/20
-        true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/4) - (player_rect.height / 2)))/20
+        true_scroll[0] += (player.x-true_scroll[0]-((WINDOW_SIZE[0]/4) - (player.size_x / 2)))/20
+        true_scroll[1] += (player.y-true_scroll[1]-((WINDOW_SIZE[1]/4) - (player.size_y / 2)))/20
         #print("NOT FS")
         window_width = 600
         window_height = 400
@@ -773,8 +730,8 @@ while True:
 
 # SCROLL & PARALLAX #
 
-    true_scroll[0] += (player_rect.x-true_scroll[0]-((WINDOW_SIZE[0]/(screen_share ** 2)) - (player_rect.width / 2))) / camera_share
-    true_scroll[1] += (player_rect.y-true_scroll[1]-((WINDOW_SIZE[1]/(screen_share ** 2)) - (player_rect.height / 2))) / camera_share
+    true_scroll[0] += (player.x-true_scroll[0]-((WINDOW_SIZE[0]/(screen_share ** 2)) - (player.size_x / 2))) / camera_share
+    true_scroll[1] += (player.y-true_scroll[1]-((WINDOW_SIZE[1]/(screen_share ** 2)) - (player.size_y / 2))) / camera_share
 
     scroll = true_scroll.copy()
     scroll[1] = int(scroll[1])
@@ -830,6 +787,7 @@ while True:
                 tile_rects.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
                 non_air_tile_rects.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE))
                 non_air_tile_rects_with_scroll.append(pygame.Rect(x * TILE_SIZE - scroll[0] , y * TILE_SIZE - scroll[1] , TILE_SIZE, TILE_SIZE))
+
             if tile == '0':
                 tile_rects.append(pygame.Rect(x * TILE_SIZE, y * TILE_SIZE , 0, 0))
             x += 1
@@ -931,25 +889,25 @@ while True:
     if playerYMomentum > 5:
         playerYMomentum = 5
 
-    if player_movement[0] > 0:
-        player_action,player_frame = change_action(player_action,player_frame,'run')
-        player_flip = False
-
     if player_movement[0] == 0:
-        player_action,player_frame = change_action(player_action,player_frame,'idle')
+        player.set_action('idle')
+
+    if player_movement[0] > 0:
+        player.set_action('run')
+        player.set_flip(False)
 
     if player_movement[0] < 0:
-        player_action,player_frame = change_action(player_action,player_frame,'run')
-        player_flip = True
+        player.set_action('run')
+        player.set_flip(True)
 
-    player_rect, collisons = move(player_rect, player_movement, tile_rects)
+    collision_types = player.move(player_movement, tile_rects)
 
-    if collisons['right'] == True or collisons['left'] == True:
+    if collision_types['right'] == True or collision_types['left'] == True:
         grass_sound_control = False
     else:
         grass_sound_control = True
 
-    if collisons['bottom']:
+    if collision_types['bottom']:
         playerYMomentum = 0
         airTimer = 0
         if grass_sound_control:
@@ -960,30 +918,44 @@ while True:
     else:
         airTimer += 1
 
-    if collisons['top']:
+    if collision_types['top']:
         playerYMomentum = 0
 
 
     if airTimer > 10 and airTimer < 20:
         falling = True
 
-    if collisons['bottom'] == True and falling == True and first_time == False:
+    if collision_types['bottom'] == True and falling == True and first_time == False:
         fall_off_sound.play()
         falling = False
 
-    if player_rect.y > 500:
-        player_rect.x = 50
-        player_rect.y = 179
+    if player.y > 500:
+        player.x = 50
+        player.y = 179
         airTimer = 0
 
 ###########################
+    
+    player.change_frame(1)
+    player.display(display,scroll)
 
-    player_frame += 1
-    if player_frame >= len(animation_database[player_action]):
-        player_frame = 0
-    player_img_id = animation_database[player_action][player_frame]
-    player_img = animationFrames[player_img_id]
-    display.blit(pygame.transform.flip(player_img,player_flip,False),(player_rect.x - scroll[0], player_rect.y - scroll[1]))
+    for i in range(len(torch_list)):
+        torch_list[i].change_frame(1)
+        torch_list[i].display(display,scroll)
+
+     ###LIGHTING OBJECT###
+    radius0 = torch.size_x - 5
+    radius1 = torch.size_x + 5
+    radius2 = torch.size_x + 15
+    for torch in torch_list:
+        radius0 -= random.randint(2,8)/1.5
+        display.blit(circle_surf((radius0 + torch.size_x / 2), (20,20,20)), (float(torch.x - (radius0)) - scroll[0], float(torch.y - (radius0)) - scroll[1]), special_flags=BLEND_RGB_ADD)
+        radius1 -= random.randint(2,8)/1.5
+        display.blit(circle_surf((radius1 + torch.size_x / 2), (20,20,20)), (float(torch.x - (radius1)) - scroll[0], float(torch.y - (radius1)) - scroll[1]), special_flags=BLEND_RGB_ADD)
+        radius2 -= random.randint(2,8)/1.5
+        display.blit(circle_surf((radius2 + torch.size_x / 2), (20,20,20)), (float(torch.x - (radius2)) - scroll[0], float(torch.y - (radius2)) - scroll[1]), special_flags=BLEND_RGB_ADD)
+
+    ###############
 
 
 # EVENT LISTENING #

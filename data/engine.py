@@ -2,7 +2,7 @@ import pygame, math, os
 from pygame.locals import *
 
 global e_colorkey
-e_colorkey = (255,255,255)
+e_colorkey = (0,0,0)
 
 def set_global_colorkey(colorkey):
     global e_colorkey
@@ -112,7 +112,7 @@ def blit_center(surf,surf2,pos):
 class entity(object):
     global animation_database, animation_higher_database
    
-    def __init__(self,x,y,size_x,size_y,e_type): # x, y, size_x, size_y, type
+    def __init__(self,x,y,size_x,size_y,e_type,animation_id): # x, y, size_x, size_y, type
         self.x = x
         self.y = y
         self.size_x = size_x
@@ -128,7 +128,7 @@ class entity(object):
         self.type = e_type # used to determine animation set among other things
         self.action_timer = 0
         self.action = ''
-        self.set_action('idle') # overall action for the entity
+        self.set_action(animation_id) # overall action for the entity
         self.entity_data = {}
         self.alpha = None
  
