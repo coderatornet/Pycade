@@ -27,19 +27,8 @@ pygame.mixer.music.play(-1)
 # MAIN DEFİNİTİONS #
 
 clock = pygame.time.Clock()
-if os.name == 'nt':
-    user32 = ctypes.windll.user32
-    real_resolution = (user32.GetSystemMetrics(0),user32.GetSystemMetrics(1))
-elif os.name == "posix":
-    try:
-        reslist = os.popen("xdpyinfo | awk '/dimensions/{print $2}'").read().strip("\n").split("x")
-        real_resolution = (int(reslist[0]),int(reslist[1]))
-    except Exception as err:
-        print(f"Unexcepted error catched {err} on real_resolution. ")
-        real_resolution = (1920,1090)
-else:
-    os.exit("Unsupported os!",os.name)
-        
+display_info = pygame.display.Info()
+real_resolution = (display_info.current_w,display_info.current_h)
 FPS = 90
 window_width = 600
 window_height = 400
